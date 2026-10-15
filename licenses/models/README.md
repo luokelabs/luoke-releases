@@ -1,6 +1,6 @@
 # 模型的许可与来源
 
-螺壳主控按发布清单下载这些模型（ModelScope 组织 `luokelabs` 下的镜像或实验室自己量化的版本）。三个模型的上游都是 Apache License 2.0（全文见 `LICENSE-Apache-2.0.txt`）；量化属于"修改"，按 Apache §4 在模型卡里标明来源、改动（量化方式）并保留上游的许可和 NOTICE。
+螺壳主控按发布清单下载这些模型（放在 ModelScope 的镜像或实验室自己量化的版本，仓库地址见各发布的 `release.json`）。三个模型的上游都是 Apache License 2.0（全文见 `LICENSE-Apache-2.0.txt`）；量化属于"修改"，按 Apache §4 在模型卡里标明来源、改动（量化方式）并保留上游的许可和 NOTICE。
 
 | 模型 | 用途 | 上游 | 许可 |
 |---|---|---|---|
