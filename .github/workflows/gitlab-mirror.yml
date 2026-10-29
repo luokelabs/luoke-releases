@@ -1,0 +1,33 @@
+# 这里一发布，就把这一版同步到 gitlab.com/luokelabs/luoke-releases（main、tag、发布文件和说明）。
+# 也能手动补某一版：Actions → 同步到 GitLab → Run workflow，填 tag。
+# 要仓库密钥 GITLAB_TOKEN：GitLab 个人令牌，权限 api。同步的具体做法在 .github/gitlab-mirror.sh。
+name: 同步到 GitLab
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要同步的发布（tag）
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitlab-mirror-${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - run: .github/gitlab-mirror.sh
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
