@@ -28,7 +28,7 @@ GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://gitlab.com/.extraheader \
   git push "https://gitlab.com/$GL_REPO.git" "+refs/remotes/origin/main:refs/heads/main" "+refs/tags/$TAG:refs/tags/$TAG"
 
 # 2. 发布文件：从 GitHub 下载，逐个传到 GitLab 软件包库
-gh release view "$TAG" -R "$GH_REPO" --json name,body > "$work/release.json"
+gh release view "$TAG" -R "$GH_REPO" --json name,body,publishedAt > "$work/release.json"
 gh release download "$TAG" -R "$GH_REPO" -D "$work/files"
 pkg_id=$(curl -sS --fail-with-body "${AUTH[@]}" "$API/packages?package_type=generic&package_name=luoke-releases&package_version=$TAG" |
   jq -r --arg v "$TAG" '[.[] | select(.name == "luoke-releases" and .version == $v)][0].id // empty')
@@ -50,11 +50,13 @@ for f in "$work"/files/*; do
     '. + [{name: $n, url: $u, direct_asset_path: ("/" + $n), link_type: (if ($n | test("\\.(dmg|zip)$")) then "package" else "other" end)}]' <<< "$links")
 done
 
-# 3. 发布：标题和说明照搬 GitHub。重跑时先删掉 GitLab 上已有的同名发布（tag 保留）再建
+# 3. 发布：标题、说明和发布时间照搬 GitHub。重跑时先删掉 GitLab 上已有的同名发布（tag 保留）再建
+# 发布时间一定要照抄：GitLab 按它定哪个是最新（permalink/latest、发布列表的顺序，螺壳 GitHub 不通时查更新也看它），
+# 不给就记成同步那一刻，补跑一个旧版本它就成了「最新」
 if [[ $(curl -sS -o /dev/null -w '%{http_code}' "${AUTH[@]}" "$API/releases/$TAG") == 200 ]]; then
   curl -sS --fail-with-body -X DELETE "${AUTH[@]}" "$API/releases/$TAG" > /dev/null
 fi
 jq -n --arg tag "$TAG" --argjson links "$links" --slurpfile r "$work/release.json" \
-  '{tag_name: $tag, name: $r[0].name, description: $r[0].body, assets: {links: $links}}' |
+  '{tag_name: $tag, name: $r[0].name, description: $r[0].body, released_at: $r[0].publishedAt, assets: {links: $links}}' |
   curl -sS --fail-with-body "${AUTH[@]}" -H 'Content-Type: application/json' --data @- "$API/releases" > /dev/null
 echo "已同步：https://gitlab.com/$GL_REPO/-/releases/$TAG"
